@@ -143,50 +143,42 @@ async function getListOfStarredMessages(accessToken) {
     }
 }
 
-async function getMessageAttachments(accessToken, messageId) {
-    try {
-        const response = await axios.get(
-            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments`,
-            {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            }
-        );
-        return response.data;
-    } catch (error) {
-        logger.error('Error fetching attachments:', error.response.data);
-        throw new Error('Failed to fetch attachments');
-    }
-}
 
-async function getMessageAttachment(accessToken, messageId, attachmentId) {
-    try {
-        const response = await axios.get(
-            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`,
-            {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            }
-        );
-        return response.data;
-    } catch (error) {
-        logger.error('Error fetching attachment:', error.response.data);
-        throw new Error('Failed to fetch attachment');
-    }
-}
 
-async function getMessageThreads(accessToken) {
+async function getMessageThreads(accessToken, pageToken = null) {
     try {
-        const response = await axios.get(
-            `https://gmail.googleapis.com/gmail/v1/users/me/threads`,
-            {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            }
-        );
-        return response.data;
-        // return response.data.threads || []; // Return the array of threads
+        const url = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/threads`);
+        
+        // If a pageToken exists, add it as a query parameter
+        if (pageToken) {
+            url.searchParams.append('pageToken', pageToken);
+        }
+
+        const response = await axios.get(url.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        return {
+            threads: response.data.threads || [], // List of threads
+            nextPageToken: response.data.nextPageToken || null, // Pagination token
+        };
     } catch (error) {
-        logger.error('Error fetching threads:', error.response.data);
+        console.error('Error fetching threads:', error.response?.data || error.message);
         throw new Error('Failed to fetch threads');
     }
+}
+
+async function fetchAllThreads(accessToken) {
+    let pageToken = null;
+    let allThreads = [];
+
+    do {
+        const { threads, nextPageToken } = await getMessageThreads(accessToken, pageToken);
+        allThreads.push(...threads); // Store threads
+        pageToken = nextPageToken; // Update for the next request
+    } while (pageToken); // Continue fetching if there's a next page
+
+    return allThreads;
 }
 
 async function getSpecificMessageThread(accessToken, threadId) {
@@ -203,20 +195,8 @@ async function getSpecificMessageThread(accessToken, threadId) {
         throw new Error('Failed to fetch thread');
     }
 }
-async function getThreadMessages(accessToken, threadId) {
-    try {
-        const response = await axios.get(
-            `https://gmail.googleapis.com/gmail/v1/users/me/threads/${threadId}/messages`,
-            {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            }
-        );
-        return response.data;
-    } catch (error) {
-        logger.error('Error fetching thread messages:', error.response.data);
-        throw new Error('Failed to fetch thread messages');
-    }
-}
+
+
 
 async function moveMessageThreadToTrash(accessToken, threadId) {
     try {
@@ -233,3 +213,6 @@ async function moveMessageThreadToTrash(accessToken, threadId) {
         throw new Error('Failed to move thread to trash');
     }
 }
+
+
+

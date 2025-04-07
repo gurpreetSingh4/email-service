@@ -17,6 +17,8 @@ async function createDraft(accessToken, draftEmailContent) {
       const requestBody = {
         message: {
           raw: encodedEmail,
+          threadId: threadId, // Optional: Specify the thread ID if you want to create a draft in a specific thread
+          labelIds: ["DRAFT"], // Optional: Specify labels for the draft
         },
       };
 
@@ -60,6 +62,8 @@ async function createDraftLarge(accessToken, draftEmailContent) {
         const requestBody = {
             message: {
                 raw: encodedEmail,
+                threadId: threadId, // Optional: Specify the thread ID if you want to create a draft in a specific thread
+                labelIds: ["DRAFT"], // Optional: Specify labels for the draft
             },
         };
 

@@ -1,7 +1,7 @@
 import dotenv from "dotenv"
+import jwt from "jsonwebtoken"
 import { redisClient } from "../config/redis-client.js"
 import { logger } from "../utils/logger.js"
-import jwt from "jsonwebtoken"
 
 dotenv.config()
 export const isAuthenticatedUser = async (req, res, next)=> {

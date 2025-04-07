@@ -5,6 +5,7 @@ import { OAuthTokens } from "../models/OAuthTokens.js";
 import { redisClient } from "../config/redis-client.js";
 import crypto from "crypto"
 import dotenv from "dotenv"
+// import { play } from "./playground.js";
 dotenv.config({
     path: './.env'
 })
@@ -37,15 +38,15 @@ export function getGoogleOAuthUrl(){
         client_id: process.env.GOOGLE_CLIENT_ID,
         response_type: 'code',
         scope: [
-            'https://www.googleapis.com/auth/gmail.readonly',
-            'https://www.googleapis.com/auth/gmail.send',
-            'https://www.googleapis.com/auth/gmail.insert',
-            'https://www.googleapis.com/auth/gmail.modify',
-            'https://www.googleapis.com/auth/gmail.labels',
-            'https://www.googleapis.com/auth/gmail.compose',
-            'https://www.googleapis.com/auth/gmail.metadata',
-            'https://www.googleapis.com/auth/gmail.settings.basic',
-            'https://mail.google.com/',
+            // 'https://www.googleapis.com/auth/gmail.send',
+            // 'https://www.googleapis.com/auth/gmail.insert',
+            // 'https://www.googleapis.com/auth/gmail.modify',
+            // 'https://www.googleapis.com/auth/gmail.labels',
+            // 'https://www.googleapis.com/auth/gmail.compose',
+            // 'https://www.googleapis.com/auth/gmail.metadata',
+            // 'https://www.googleapis.com/auth/gmail.settings.basic',
+            // 'https://www.googleapis.com/auth/gmail.readonly',
+            'https://mail.google.com/'
         ].join(' '),
         access_type: 'offline',  // Required to get refresh token
         prompt: 'consent'
@@ -79,23 +80,7 @@ async function getTokens(code){
     }
 }
 
-async function getUserInfo(accessToken){
-    try{
-        // *****************************************
-        // play(accessToken)
-        // *****************************************
-        const { data } = await axios.get(process.env.USER_INFO_ENDPOINT, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        return data;
-    }catch(error){
-        logger.error('Error fetching user info:', error.response.data);
-        res.status(500).json({
-            message: 'Error fetching user info',
-            success: false
-        });
-    }
-}
+
 
 export async function refreshAccessToken(refreshToken){
     const isRefreshTokenValid = await OAuthTokens.findOne({ refresh_token: refreshToken })
@@ -152,8 +137,7 @@ export const finalizeOAuth = async (req, res) => {
                 message: "Failed to get tokens"
             })
         }
-        console.log(tokens.access_token)
-        console.log(req.session)
+        // play(tokens.access_token)
         return res.json(tokens.access_token)
 
         // const userInfo = await getUserInfo(tokens.access_token)
@@ -211,4 +195,3 @@ export const finalizeOAuth = async (req, res) => {
         })
     }
 }
-

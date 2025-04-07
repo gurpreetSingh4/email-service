@@ -4,12 +4,15 @@ import cors from "cors";
 import helmet from "helmet";
 import session from "express-session";
 import {RedisStore} from "connect-redis";
+import { expressMiddleware } from "@apollo/server/express4";
+import bodyParser from "body-parser";
 import { logger } from "./utils/logger.js";
 import { connectToMongoDb } from "./database/mongoDb.js";
 import { rateLimiter } from "./middleware/rateLimiter.js";
 import { router } from "./routes/email-routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { redisClient } from "./config/redis-client.js";
+import { connectToApolloServer } from "./graphql/graphql.js";
 
 
 dotenv.config({
@@ -19,12 +22,17 @@ dotenv.config({
 const app = express();
 const port = process.env.PORT || 3006;
 
+const gqlServer = connectToApolloServer();
+await gqlServer.start();
+
 await connectToMongoDb(process.env.MONGODB_URI);
 
 // middleware
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
+app.use("/graphql", bodyParser.json(), expressMiddleware(gqlServer));
+
 
 app.use((req, res, next) => {
   logger.info(`Received request: ${req.method} request to ${req.url}`);
@@ -46,6 +54,8 @@ app.use((req, res, next) => {
       });
     });
 });
+
+
 
 app.use(session({
   store: new RedisStore({ client: redisClient}),
@@ -70,6 +80,19 @@ app.use((req, res, next) => {
 
 // routes
 app.use("/api/email", router);
+
+// Apollo server middleware (if using Apollo Server)
+
+
+
+// app.use("/graphql", bodyParser.json(), expressMiddleware(gqlServer));
+// app.use("/graphql", bodyParser.json(), expressMiddleware(gqlServer, {
+//   context: async ({ req, res }) => ({
+//     req,
+//     res,
+//     user: req.session.user, // or however you're handling auth/session
+//   }),
+// }));
 
 // error handler
 app.use(errorHandler);
