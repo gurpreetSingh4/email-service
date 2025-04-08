@@ -14,7 +14,8 @@
     "nodemon": "^3.1.9"
   },
   "dependencies": {
-    "@apollo/server": "^4.11.3",
+    "@apollo/server": "^4.7.5",
+    "body-parser": "^1.20.2",
     "amqplib": "^0.10.7",
     "argon2": "^0.41.1",
     "axios": "^1.8.4",
