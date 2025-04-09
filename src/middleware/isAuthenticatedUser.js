@@ -15,14 +15,15 @@ export const isAuthenticatedUser = async (req, res, next)=> {
             })
         } 
         const jwtToken = await redisClient.get(`${process.env.AUTHACCESSTOKENREDIS}:${userId}`)
-        if(!jwtToken){
-            logger.warn("jwt token is not present Or User logOut")
+        const tokenData = jwt.verify(jwtToken, process.env.JWT_SECRET)
+        if(!tokenData){
+            logger.error("tokenData is not present")
             return res.status(401).json({
                 success: false,
-                message:"jwt token is not present Or User logOut"
+                message:"tokenData is not present"
             })
         }
-        const tokenData = jwt.verify(jwtToken, process.env.JWT_SECRET)
+        console.log("tokenData", {tokenData})
         req.session.user = tokenData
         next()
     } catch(error){

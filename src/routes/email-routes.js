@@ -2,6 +2,7 @@ import express from "express";
 import {
   finalizeOAuth,
   getGoogleOAuthUrl,
+  refreshAccessTokenHandler,
 } from "../controllers/oAuth-controller.js";
 import { isAuthenticatedUser } from "../middleware/isAuthenticatedUser.js";
 import bodyParser from "body-parser";
@@ -18,10 +19,11 @@ export const router = express.Router();
 // router.post("/drafts", logoutUser)
 // router.post("/labels", refreshTokenUser)
 
-router.get("/google", isAuthenticatedUser, (req, res) => {
+router.get("/google",isAuthenticatedUser, (req, res) => {
   res.redirect(getGoogleOAuthUrl());
 });
 router.get("/google/callback", finalizeOAuth);
+router.get("/refreshaccesstoken", refreshAccessTokenHandler);
 
 router.use(
   "/graphql",
@@ -34,5 +36,3 @@ router.use(
     }),
   })
 );
-
-// refresh token pending    try using crone as per production standards

@@ -10,6 +10,7 @@ import { rateLimiter } from "./middleware/rateLimiter.js";
 import { router } from "./routes/email-routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { redisClient } from "./config/redis-client.js";
+import { isAuthenticatedUser } from "./middleware/isAuthenticatedUser.js";
 
 dotenv.config({
   path: "./.env",
