@@ -10,7 +10,6 @@ import { rateLimiter } from "./middleware/rateLimiter.js";
 import { router } from "./routes/email-routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { redisClient } from "./config/redis-client.js";
-import { isAuthenticatedUser } from "./middleware/isAuthenticatedUser.js";
 
 dotenv.config({
   path: "./.env",
@@ -36,7 +35,13 @@ app.use((req, res, next) => {
   helmet()(req, res, next);
 });
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.VITE_FRONTEND_URL, // your Vite frontend origin
+    credentials: true,
+  })
+);
+
 
 app.use((req, res, next) => {
   logger.info(`Received request: ${req.method} request to ${req.url}`);
@@ -44,20 +49,20 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  rateLimiter
-    .consume(req.ip)
-    .then(() => {
-      next();
-    })
-    .catch(() => {
-      logger.warn(`Too many requests from IP: ${req.ip}`);
-      res.status(429).json({
-        success: false,
-        message: "Too many requests",
-      });
-    });
-});
+// app.use((req, res, next) => {
+//   rateLimiter
+//     .consume(req.ip)
+//     .then(() => {
+//       next();
+//     })
+//     .catch(() => {
+//       logger.warn(`Too many requests from IP: ${req.ip}`);
+//       res.status(429).json({
+//         success: false,
+//         message: "Too many requests",
+//       });
+//     });
+// });
 
 app.use(session({
   store: new RedisStore({ client: redisClient}),
@@ -66,7 +71,8 @@ app.use(session({
   saveUninitialized: false,
   cookie:{
     secure: false,   // Set to `true` if using HTTPS
-    httpOnly: true,  // Prevents client-side JS access
+    httpOnly: true, 
+    sameSite: 'lax', // Prevents client-side JS access
     maxAge: 86400000 // 1-day expiration
   }
 }))
@@ -76,20 +82,13 @@ app.use(session({
 app.use((req, res, next) => {
   if (!req.session.user) {
       req.session.user = {};  // Initialize if not present
+      req.session.regEmail = {};  // Initialize if not present
   }
   next();
 });
 
 // routes
 app.use("/api/email", router);
-
-
-
-
-
-
-// app.use("/graphql", bodyParser.json(), expressMiddleware(gqlServer));
-// 
 
 // error handler
 app.use(errorHandler);

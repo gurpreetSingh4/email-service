@@ -1,14 +1,29 @@
+import axios from "axios";
+import { logger } from "../utils/logger.js";
 
 
-async function createDraft(accessToken, draftEmailContent) {
+export async function getDrafts(accessToken) {
     try {
-        const email = `To: recipient@example.com
-        Subject: Test Draft
-        Content-Type: text/plain; charset="UTF-8"
+        const response = await axios.get(
+            `https://gmail.googleapis.com/gmail/v1/users/me/drafts`,
+            {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            }
+        );
+        return response.data;              
+    } catch (error) {
+        logger.error("Error fetching drafts:", error.response ? error.response.data : error.message);
+    }
+}
+export async function createDraft(accessToken, draftEmailContent) {
+    try {
+        // const draftEmailContent = `To: recipient@example.com
+        // Subject: Test Draft
+        // Content-Type: text/plain; charset="UTF-8"
         
-        This is a test draft email.`;
+        // This is a test draft email.`;
 
-        const encodedEmail = Buffer.from(email)
+        const encodedEmail = Buffer.from(draftEmailContent)
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
@@ -92,19 +107,7 @@ async function createDraftLarge(accessToken, draftEmailContent) {
 //   }
 
 
-async function getDrafts(accessToken) {
-    try {
-        const response = await axios.get(
-            `https://gmail.googleapis.com/gmail/v1/users/me/drafts`,
-            {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            }
-        );
-        return response.data;              
-    } catch (error) {
-        console.error("Error fetching drafts:", error.response ? error.response.data : error.message);
-    }
-}
+
 // {
 //     "drafts": [
 //       { "id": "r-12345abcdef", "message": { "id": "12345abcdef" } },

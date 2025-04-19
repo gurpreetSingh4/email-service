@@ -2,7 +2,7 @@ import express from "express";
 import {
   finalizeOAuth,
   getGoogleOAuthUrl,
-  refreshAccessTokenHandler,
+  // refreshAccessTokenHandler,
 } from "../controllers/oAuth-controller.js";
 import { isAuthenticatedUser } from "../middleware/isAuthenticatedUser.js";
 import bodyParser from "body-parser";
@@ -23,16 +23,18 @@ router.get("/google",isAuthenticatedUser, (req, res) => {
   res.redirect(getGoogleOAuthUrl());
 });
 router.get("/google/callback", finalizeOAuth);
-router.get("/refreshaccesstoken", refreshAccessTokenHandler);
+// router.get("/refreshaccesstoken", refreshAccessTokenHandler);
 
 router.use(
   "/graphql",
+  isAuthenticatedUser,
   bodyParser.json(),
   expressMiddleware(gqlServer, {
     context: async ({ req, res }) => ({
       req,
       res,
       user: req.session.user, // or however you're handling auth/session
+      regEmail: req.session.regEmail,
     }),
   })
 );
