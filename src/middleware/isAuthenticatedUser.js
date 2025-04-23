@@ -7,7 +7,7 @@ dotenv.config();
 
 export const isAuthenticatedUser = async (req, res, next) => {
   try {
-    const { userId, regEmail } = req.query;
+    const { userId, regemail } = req.query;
 
     if (!userId) {
       logger.warn("Missing 'userId' in query params");
@@ -41,7 +41,7 @@ export const isAuthenticatedUser = async (req, res, next) => {
 
     req.session.user = tokenData
 
-    if(regEmail) req.session.regEmail = regEmail
+    if(regemail) req.session.regEmail = regemail
 
     next();
   } catch (error) {

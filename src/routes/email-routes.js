@@ -1,13 +1,15 @@
 import express from "express";
 import {
+  deleteRegisteredEmail,
   finalizeOAuth,
   getGoogleOAuthUrl,
-  // refreshAccessTokenHandler,
+  refreshAccessToken,
 } from "../controllers/oAuth-controller.js";
 import { isAuthenticatedUser } from "../middleware/isAuthenticatedUser.js";
 import bodyParser from "body-parser";
 import { expressMiddleware } from "@apollo/server/express4";
 import { connectToApolloServer } from "../graphql/graphql.js";
+import { userAuthMiddleware } from "../middleware/userAuthMiddleware.js";
 
 const gqlServer = connectToApolloServer();
 await gqlServer.start();
@@ -19,11 +21,13 @@ export const router = express.Router();
 // router.post("/drafts", logoutUser)
 // router.post("/labels", refreshTokenUser)
 
+router.get("/refreshaccesstoken", userAuthMiddleware, refreshAccessToken)
+router.post("/deleteregisteredemail", userAuthMiddleware, deleteRegisteredEmail)
+
 router.get("/google",isAuthenticatedUser, (req, res) => {
   res.redirect(getGoogleOAuthUrl());
 });
 router.get("/google/callback", finalizeOAuth);
-// router.get("/refreshaccesstoken", refreshAccessTokenHandler);
 
 router.use(
   "/graphql",

@@ -4,13 +4,11 @@ import { UserRegisteredEmailsData } from "../models/UserRegisteredEmailsData.js"
 import { redisClient } from "../config/redis-client.js";
 import dotenv from "dotenv";
 import { decryptToken, encryptToken } from "../utils/cryptoFunctions.js";
-import { isValidObjectId } from "mongoose";
-// import { play } from "./playground.js";
+import { isValidObjectId, Types } from "mongoose";
+
 dotenv.config({
   path: "./.env",
 });
-
-let userRefreshToken;
 
 async function getUserInfo(accessToken) {
   try {
@@ -66,57 +64,15 @@ async function getTokens(code) {
   }
 }
 
-async function refreshAccessToken(req, res) {
-  logger.info("Refresh access token endpoint hit...");
+export async function refreshToken(refreshToken) {
+  console.log("aaya h refresh token", refreshToken);
   try {
-    const regEmail = req.session?.regEmail || {};
-    if (!regEmail) {
-      logger.warn("regEmail missing in session");
-      return res
-        .status(400)
-        .json({ success: false, message: "User email is required in session" });
-    }
-    console.log("userh", regEmail);
-    const isRefreshTokenValid = await UserRegisteredEmailsData.findOne(
-      {
-        "registeredEmailsData.email": regEmail,
-      },
-      {
-        registeredEmailsData: {
-          $elemMatch: { email: regEmail }, //The projection elemMatch tells MongoDB to return only the first matching element from the registeredEmailsData array — not the entire array.
-        },
-      }
-    );
-    console.log("regfreh h", isRefreshTokenValid);
-    if (!isRefreshTokenValid) {
-      logger.warn(
-        "Invalid email or email not provide in the req at refresh token flow"
-      );
-      return res.status(401).json({
-        success: false,
-        message:
-          "Invalid email or email not provide in the req at refresh token flow",
-      });
-    }
-    const emailData = isRefreshTokenValid.registeredEmailsData?.[0];
-    if (!emailData || !emailData.emailRefreshToken) {
-      logger.warn("Refresh token not found for registered email");
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token missing for this user",
-      });
-    }
-    // checking coming token and save token are same or not
-    const savedRefreshToken =
-      isRefreshTokenValid.registeredEmailsData[0].emailRefreshToken;
-    const decryptedRefreshToken = decryptToken(savedRefreshToken);
-    console.log("deccript bhi ho gya", decryptedRefreshToken);
     const { data } = await axios.post(
       process.env.TOKEN_ENDPOINT,
       new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        refresh_token: decryptedRefreshToken,
+        refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
       {
@@ -125,40 +81,9 @@ async function refreshAccessToken(req, res) {
         },
       }
     );
-
-    const { access_token } = data;
-    console.log("acces token from refresh", access_token);
-
-    console.log(
-      "check kr lo ",
-      `${process.env.AUTHEMAILACCESSTOKENREDIS}:${req.session.user.userId}:${isRefreshTokenValid.registeredEmailsData[0].email}`
-    );
-
-    await redisClient.set(
-      `${process.env.AUTHEMAILACCESSTOKENREDIS}:${req.session.user.userId}:${isRefreshTokenValid.registeredEmailsData[0].email}`,
-      access_token,
-      "EX",
-      3599
-    );
-    console.log(
-      "accessTokenss ref",
-      await redisClient.get(
-        `${process.env.AUTHEMAILACCESSTOKENREDIS}:${req.session.user.userId}:${isRefreshTokenValid.registeredEmailsData[0].email}`
-      )
-    );
-
-    logger.info("Redis access token set successfully");
-    return res.status(200).json({
-      success: true,
-      message: "Access token refreshed successfully",
-    });
-  } catch (error) {
-    logger.error("Error during Oauth refresh token:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to refresh access token",
-      error: error.message || "Unknown error",
-    });
+    return data;
+  } catch (e) {
+    logger.error(e, "error refresh token function");
   }
 }
 
@@ -187,7 +112,7 @@ export function getGoogleOAuthUrl() {
   return `${process.env.OAUTH_ROOT_URL}?${queryString}`;
 }
 
-export const  finalizeOAuth = async (req, res) => {
+export const finalizeOAuth = async (req, res) => {
   logger.info("Finalize OAuth end point hit...");
   try {
     const { code } = req.query;
@@ -206,7 +131,6 @@ export const  finalizeOAuth = async (req, res) => {
         message: "Failed to get tokens",
       });
     }
-    const { access_token, refresh_token } = tokens;
     const userId = req.session.user.userId;
     if (!userId) {
       logger.warn("User ID not found in session");
@@ -215,7 +139,7 @@ export const  finalizeOAuth = async (req, res) => {
         message: "User ID not found in session",
       });
     }
-    const userInfo = await getUserInfo(access_token);
+    const userInfo = await getUserInfo(tokens.access_token);
     if (!userInfo) {
       logger.warn("Failed to get user info in email module");
       return res.status(500).json({
@@ -236,8 +160,20 @@ export const  finalizeOAuth = async (req, res) => {
       }
     );
 
+    console.log(
+      "hekdsak",
+      existingRegisteredEmail.registeredEmailsData[0].emailRefreshToken
+    );
+
     if (existingRegisteredEmail) {
       logger.info("Email already registered");
+
+      const encrypRefToken =
+        existingRegisteredEmail.registeredEmailsData[0].emailRefreshToken;
+      const previousRefreshtoken = decryptToken(encrypRefToken);
+      const { access_token } = await refreshToken(previousRefreshtoken);
+
+      console.log("you ji ", access_token);
       req.session.regEmail = email;
       await redisClient.set(
         `${process.env.AUTHEMAILACCESSTOKENREDIS}:${userId}:${email}`,
@@ -245,7 +181,6 @@ export const  finalizeOAuth = async (req, res) => {
         "EX",
         3599
       );
-      userRefreshToken = refresh_token;
       return res.redirect(
         `${process.env.VITE_OAUTH_GMAIL_CALLBACK}?success=true&regemail=${email}&userid=${userId}`
       );
@@ -257,7 +192,7 @@ export const  finalizeOAuth = async (req, res) => {
       // });
     }
 
-    const encryptedEmailRefreshToken = encryptToken(refresh_token);
+    const encryptedEmailRefreshToken = encryptToken(tokens.refresh_token);
     const existing = await UserRegisteredEmailsData.findOne({ user: userId });
 
     if (existing) {
@@ -293,7 +228,7 @@ export const  finalizeOAuth = async (req, res) => {
 
     await redisClient.set(
       `${process.env.AUTHEMAILACCESSTOKENREDIS}:${userId}:${email}`,
-      access_token,
+      tokens.access_token,
       "EX",
       3599
     );
@@ -316,18 +251,67 @@ export const  finalizeOAuth = async (req, res) => {
   }
 };
 
-// export async function refreshAccessTokenHandler(req, res) {
-//   try {
-//     await refreshAccessToken(req, res);
-//     res.status(200).json({
-//       success: true,
-//       message: "Access token refreshed successfully",
-//     });
-//   } catch (error) {
-//     logger.error("Error refreshing access token", error.response.data);
-//     res.status(500).json({
-//       message: "Error refreshing access token",
-//       success: false,
-//     });
-//   }
-// }
+export const refreshAccessToken = async (req, res) => {
+  const { userid, regemail } = req.query;
+  if (!userid || !regemail) {
+    return res.status(400).json({
+      success: false,
+      message: "userid , regemail not found in query parameter",
+    });
+  }
+
+  const existingRegisteredEmail = await UserRegisteredEmailsData.findOne(
+    {
+      "registeredEmailsData.email": regemail,
+    },
+    {
+      registeredEmailsData: {
+        $elemMatch: { email: regemail },
+      },
+    }
+  );
+  if (existingRegisteredEmail) {
+    const encrypRefToken =
+      existingRegisteredEmail.registeredEmailsData[0].emailRefreshToken;
+    const previousRefreshtoken = decryptToken(encrypRefToken);
+    const { access_token } = await refreshToken(previousRefreshtoken);
+    await redisClient.set(
+      `${process.env.AUTHEMAILACCESSTOKENREDIS}:${userid}:${regemail}`,
+      access_token,
+      "EX",
+      3599
+    );
+    return res.status(200).json({
+      success: true,
+      message: `Existing Registered ${regemail} Access Token Refresh successfully`,
+      user: userid,
+      regEmail: regemail,
+    });
+  }
+};
+
+export const deleteRegisteredEmail = async (req, res) => {
+  try {
+    const { userid, regemail } = req.query;
+    if (!userid || !regemail) {
+      return res.status(400).json({
+        success: false,
+        message: "userid , email not found in query parameter",
+      });
+    }
+    const result = await UserRegisteredEmailsData.updateOne(
+      { user: new mongoose.Types.ObjectId(userid) },
+      { $pull: { registeredEmailsData: { regemail } } }
+    );
+    if (result.modifiedCount === 0) {
+      return {
+        success: false,
+        message: `${regemail} not found or nothing was removed`,
+      };
+    }
+    return { success: true, message: `${regemail} deleted successfully` };
+  } catch (error) {
+    console.error(`Error deleting registered ${regemail}:`, error);
+    return { success: false, message: "Internal server error", error };
+  }
+};
