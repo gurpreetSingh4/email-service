@@ -206,9 +206,7 @@ export const  finalizeOAuth = async (req, res) => {
         message: "Failed to get tokens",
       });
     }
-    // play(tokens.access_token)
     const { access_token, refresh_token } = tokens;
-    console.log("refresh token", refresh_token)
     const userId = req.session.user.userId;
     if (!userId) {
       logger.warn("User ID not found in session");
@@ -248,12 +246,15 @@ export const  finalizeOAuth = async (req, res) => {
         3599
       );
       userRefreshToken = refresh_token;
-      return res.status(200).json({
-        success: true,
-        message: "Email already registered",
-        user: userId,
-        registeredEmails: email,
-      });
+      return res.redirect(
+        `${process.env.VITE_OAUTH_GMAIL_CALLBACK}?success=true&regemail=${email}&userid=${userId}`
+      );
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Email already registered",
+      //   user: userId,
+      //   registeredEmails: email,
+      // });
     }
 
     const encryptedEmailRefreshToken = encryptToken(refresh_token);
@@ -296,20 +297,16 @@ export const  finalizeOAuth = async (req, res) => {
       "EX",
       3599
     );
-
-    console.log(
-      "accessTokenss",
-      await redisClient.get(
-        `${process.env.AUTHEMAILACCESSTOKENREDIS}:${userId}:${email}`
-      )
-    );
     req.session.regEmail = email;
-    res.status(200).json({
-      success: true,
-      message: "Email OAuth flow completed successfully",
-      user: userId,
-      registeredEmails: email,
-    });
+    return res.redirect(
+      `${process.env.VITE_OAUTH_GMAIL_CALLBACK}?success=true&regemail=${email}&userid=${userId}`
+    );
+    // res.status(200).json({
+    //   success: true,
+    //   message: "Email OAuth flow completed successfully",
+    //   user: userId,
+    //   registeredEmails: email,
+    // });
   } catch (error) {
     logger.error("Error finalizing OAuth", error);
     res.status(500).json({
