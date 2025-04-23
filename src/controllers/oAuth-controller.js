@@ -160,12 +160,12 @@ export const finalizeOAuth = async (req, res) => {
       }
     );
 
-    console.log(
-      "hekdsak",
+    if (
+      existingRegisteredEmail &&
+      existingRegisteredEmail.registeredEmailsData &&
+      existingRegisteredEmail.registeredEmailsData.length > 0 &&
       existingRegisteredEmail.registeredEmailsData[0].emailRefreshToken
-    );
-
-    if (existingRegisteredEmail) {
+    ) {
       logger.info("Email already registered");
 
       const encrypRefToken =
@@ -290,28 +290,46 @@ export const refreshAccessToken = async (req, res) => {
   }
 };
 
-export const deleteRegisteredEmail = async (req, res) => {
-  try {
-    const { userid, regemail } = req.query;
-    if (!userid || !regemail) {
-      return res.status(400).json({
-        success: false,
-        message: "userid , email not found in query parameter",
-      });
-    }
-    const result = await UserRegisteredEmailsData.updateOne(
-      { user: new mongoose.Types.ObjectId(userid) },
-      { $pull: { registeredEmailsData: { regemail } } }
-    );
-    if (result.modifiedCount === 0) {
-      return {
-        success: false,
-        message: `${regemail} not found or nothing was removed`,
-      };
-    }
-    return { success: true, message: `${regemail} deleted successfully` };
-  } catch (error) {
-    console.error(`Error deleting registered ${regemail}:`, error);
-    return { success: false, message: "Internal server error", error };
+export async function removeRegisteredEmailByUser(req, res) {
+  const userId = req.query.userid;
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: "userid not found in query param",
+    });
   }
-};
+  const email = req.query.regemail;
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: "userid not found in query param",
+    });
+  }
+  try {
+    const result = await UserRegisteredEmailsData.findOneAndUpdate(
+      { user: userId },
+      {
+        $pull: {
+          registeredEmailsData: { email: email },
+        },
+      },
+      { new: true }
+    );
+
+    if (!result) {
+      throw new Error("User not found or email not present");
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Email entry removed successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error removing registered email:", error);
+    return {
+      success: false,
+      message: error.message || "Something went wrong",
+    };
+  }
+}

@@ -1,9 +1,9 @@
 import express from "express";
 import {
-  deleteRegisteredEmail,
   finalizeOAuth,
   getGoogleOAuthUrl,
   refreshAccessToken,
+  removeRegisteredEmailByUser,
 } from "../controllers/oAuth-controller.js";
 import { isAuthenticatedUser } from "../middleware/isAuthenticatedUser.js";
 import bodyParser from "body-parser";
@@ -22,7 +22,7 @@ export const router = express.Router();
 // router.post("/labels", refreshTokenUser)
 
 router.get("/refreshaccesstoken", userAuthMiddleware, refreshAccessToken)
-router.post("/deleteregisteredemail", userAuthMiddleware, deleteRegisteredEmail)
+router.get("/deleteregisteredemail", userAuthMiddleware, removeRegisteredEmailByUser)
 
 router.get("/google",isAuthenticatedUser, (req, res) => {
   res.redirect(getGoogleOAuthUrl());

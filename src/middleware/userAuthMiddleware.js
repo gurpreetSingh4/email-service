@@ -1,6 +1,7 @@
 import { redisClient } from "../config/redis-client.js";
 
 export const userAuthMiddleware = async (req, res, next) => {
+  console.log("hello",req.query)
   const user = req.query.userid
   if(!user){
     return res.status(400).json({
