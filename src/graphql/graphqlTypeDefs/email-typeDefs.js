@@ -91,6 +91,19 @@ export const emailTypeDefs = gql`
     labelListVisibility: String
   }
 
+  type LabelStats {
+    labelId: String!
+    name: String!
+    total: Int!
+    unread: Int!
+    color: String!
+  }
+
+  type EmailLabelStatsResponse {
+    labels: [GmailLabel!]!
+    stats: [LabelStats!]!
+  }
+
   type GmailMessage {
     id: String!
     threadId: String!
@@ -160,7 +173,10 @@ export const emailTypeDefs = gql`
   # ===================
 
   type Query {
+    getEmailLabelStats: EmailLabelStatsResponse!
+
     listGmailLabels: [GmailLabel]!
+
 
     getGmailMessage(id: String!): GmailMessage
 

@@ -19,6 +19,53 @@ export async function getAllLabels(accessToken) {
   }
 }
 
+export async function getEmailLabelStatsFn(accessToken) {
+  
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  try {
+    const response = await axios.get(
+      "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    const labels = response.data.labels;
+    const stats = await Promise.all(
+      labels.map(async (label, index) => {
+        const labelRes = await axios.get(
+          `https://gmail.googleapis.com/gmail/v1/users/me/labels/${label.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = labelRes.data;
+        return {
+          labelId: data.id,
+          name: data.name,
+          total: data.messagesTotal,
+          unread: data.messagesUnread,
+          color: COLORS[index % COLORS.length],
+        };
+      })
+    );
+    return {
+      labels: labels.map((label) => ({
+        id: label.id,
+        name: label.name,
+        type: label.type,
+      })),
+      stats,
+    };
+  } catch (error) {
+    logger.error("Error fetching labels:", error.response.data);
+    throw new Error("Failed to fetch labels");
+  }
+}
+
 export async function createLabel(accessToken, labelName) {
     try {
       const response = await axios.post(

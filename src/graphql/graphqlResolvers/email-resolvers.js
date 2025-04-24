@@ -6,6 +6,7 @@ import {
   createLabel,
   deleteLabel,
   getAllLabels,
+  getEmailLabelStatsFn,
   updateLabel,
 } from "../../controllers/label-email-controller.js";
 import {
@@ -40,6 +41,11 @@ export const graphQlEmailResolvers = {
       const accessToken = await getAccessToken(req);
       return await getAllLabels(accessToken);
     },
+    getEmailLabelStats: async (_, __, { req, res, user }) => {
+      const accessToken = await getAccessToken(req);
+      return await getEmailLabelStatsFn(accessToken);
+    },
+
     getGmailMessage: async (_, { id }, { req, res, user }) => {
       const accessToken = await getAccessToken(req);
       return await getSpecificMessage(accessToken, id);

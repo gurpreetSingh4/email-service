@@ -7,17 +7,17 @@ dotenv.config();
 
 export const isAuthenticatedUser = async (req, res, next) => {
   try {
-    const { userId, regemail } = req.query;
+    const { userid, regemail } = req.query;
 
-    if (!userId) {
-      logger.warn("Missing 'userId' in query params");
+    if (!userid) {
+      logger.warn("Missing 'userid' in query params");
       return res.status(400).json({
         success: false,
-        message: "Missing 'userId' in query parameters",
+        message: "Missing 'userid' in query parameters",
       });
     }
 
-    const redisKey = `${process.env.AUTHACCESSTOKENREDIS}:${userId}`;
+    const redisKey = `${process.env.AUTHACCESSTOKENREDIS}:${userid}`;
     const jwtToken = await redisClient.get(redisKey);
 
     if (!jwtToken) {
@@ -39,9 +39,16 @@ export const isAuthenticatedUser = async (req, res, next) => {
       });
     }
 
-    req.session.user = tokenData
+    req.session.user = tokenData;
 
-    if(regemail) req.session.regEmail = regemail
+    if (regemail) {
+      req.session.regEmail = regemail;
+      console.log(regemail);
+      next();
+    }
+    req.session.regEmail = await redisClient.get(
+      `${process.env.CURRENTEMAILTOKENREDIS}`
+    );
 
     next();
   } catch (error) {

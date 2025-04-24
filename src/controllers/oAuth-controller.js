@@ -281,6 +281,13 @@ export const refreshAccessToken = async (req, res) => {
       "EX",
       3599
     );
+    await redisClient.set(
+      `${process.env.CURRENTEMAILTOKENREDIS}`,
+      regemail,
+      "EX",
+      3599
+    );
+    console.log("access token",access_token)
     return res.status(200).json({
       success: true,
       message: `Existing Registered ${regemail} Access Token Refresh successfully`,

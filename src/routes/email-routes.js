@@ -11,8 +11,8 @@ import { expressMiddleware } from "@apollo/server/express4";
 import { connectToApolloServer } from "../graphql/graphql.js";
 import { userAuthMiddleware } from "../middleware/userAuthMiddleware.js";
 
-const gqlServer = connectToApolloServer();
-await gqlServer.start();
+// const gqlServer = connectToApolloServer();
+// await gqlServer.start();
 
 export const router = express.Router();
 
@@ -29,16 +29,16 @@ router.get("/google",isAuthenticatedUser, (req, res) => {
 });
 router.get("/google/callback", finalizeOAuth);
 
-router.use(
-  "/graphql",
-  isAuthenticatedUser,
-  bodyParser.json(),
-  expressMiddleware(gqlServer, {
-    context: async ({ req, res }) => ({
-      req,
-      res,
-      user: req.session.user, // or however you're handling auth/session
-      regEmail: req.session.regEmail,
-    }),
-  })
-);
+// router.use(
+//   "/graphql",
+//   isAuthenticatedUser,
+//   bodyParser.json(),
+//   expressMiddleware(gqlServer, {
+//     context: async ({ req, res }) => ({
+//       req,
+//       res,
+//       user: req.session.user, // or however you're handling auth/session
+//       regEmail: req.session.regEmail,
+//     }),
+//   })
+// );
