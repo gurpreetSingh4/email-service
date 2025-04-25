@@ -273,6 +273,8 @@ export const refreshAccessToken = async (req, res) => {
   if (existingRegisteredEmail) {
     const encrypRefToken =
       existingRegisteredEmail.registeredEmailsData[0].emailRefreshToken;
+    const currentUserName =
+      existingRegisteredEmail.registeredEmailsData[0].name;
     const previousRefreshtoken = decryptToken(encrypRefToken);
     const { access_token } = await refreshToken(previousRefreshtoken);
     await redisClient.set(
@@ -287,7 +289,13 @@ export const refreshAccessToken = async (req, res) => {
       "EX",
       3599
     );
-    console.log("access token",access_token)
+    await redisClient.set(
+      `${process.env.CURRENTNAMETOKENREDIS}`,
+      currentUserName,
+      "EX",
+      3599
+    );
+    console.log("access token", access_token);
     return res.status(200).json({
       success: true,
       message: `Existing Registered ${regemail} Access Token Refresh successfully`,

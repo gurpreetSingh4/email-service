@@ -49,6 +49,9 @@ export const isAuthenticatedUser = async (req, res, next) => {
     req.session.regEmail = await redisClient.get(
       `${process.env.CURRENTEMAILTOKENREDIS}`
     );
+    req.session.regName = await redisClient.get(
+      `${process.env.CURRENTNAMETOKENREDIS}`
+    );
 
     next();
   } catch (error) {

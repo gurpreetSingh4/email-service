@@ -79,6 +79,18 @@ export const emailTypeDefs = gql`
     labelFilterAction: String
   }
 
+  input SaveDraftInput {
+    subject: String
+    body: String
+    recipients: [String!]!
+  }
+
+  input SendEmailInput {
+    subject: String!
+    body: String!
+    recipients: [String!]!
+  }
+
   # ===================
   # OBJECT TYPES
   # ===================
@@ -147,6 +159,71 @@ export const emailTypeDefs = gql`
     expiration: String
   }
 
+  type User {
+    id: ID!
+    email: String!
+    name: String!
+    avatar: String
+  }
+
+  type Label {
+    id: ID!
+    name: String!
+  }
+
+  type EmailSender {
+    name: String
+    email: String
+  }
+
+  type EmailLabel {
+    id: ID!
+    name: String!
+  }
+
+  type PartialEmailStarInfo {
+    id: ID!
+    isStarred: Boolean!
+  }
+
+  type PartialEmailMoveInfo {
+    id: ID!
+    folder: String!
+  }
+
+  type PartialEmailLabelsInfo {
+    id: ID!
+    labels: [EmailLabel!]!
+  }
+
+  type Email {
+    id: ID!
+    subject: String!
+    sender: EmailSender
+    recipients: [String!]!
+    body: String
+    date: String
+    isStarred: Boolean
+    folder: String
+    labels: [EmailLabel!]!
+  }
+
+  type Draft {
+    id: ID!
+    subject: String
+    body: String
+    recipients: [String!]!
+    folder: String
+  }
+
+  type SentEmailInfo {
+    id: ID!
+    subject: String!
+    body: String!
+    recipients: [String!]!
+    date: String
+    folder: String
+  }
   # ===================
   # PAGINATION
   # ===================
@@ -173,22 +250,23 @@ export const emailTypeDefs = gql`
   # ===================
 
   type Query {
+    # listGmailLabels: [GmailLabel]!
+    # getGmailMessage(id: String!): GmailMessage
+    # listGmailMessages(input: GmailMessageQueryInput): GmailMessageList
+    # getGmailThread(id: String!): GmailThread
+    # listGmailThreads(input: GmailThreadQueryInput): GmailThreadList
+    # listGmailDrafts(maxResults: Int, pageToken: String): GmailDraftList
+    # searchGmailMessages(input: GmailAdvancedSearchInput!): GmailMessageList
+    # searchGmailThreads(input: GmailAdvancedSearchInput!): GmailThreadList
+
     getEmailLabelStats: EmailLabelStatsResponse!
-
-    listGmailLabels: [GmailLabel]!
-
-
-    getGmailMessage(id: String!): GmailMessage
-
-    listGmailMessages(input: GmailMessageQueryInput): GmailMessageList
-
-    getGmailThread(id: String!): GmailThread
-    listGmailThreads(input: GmailThreadQueryInput): GmailThreadList
-
-    listGmailDrafts(maxResults: Int, pageToken: String): GmailDraftList
-
-    searchGmailMessages(input: GmailAdvancedSearchInput!): GmailMessageList
-    searchGmailThreads(input: GmailAdvancedSearchInput!): GmailThreadList
+    emails(folder: String!): [Email!]!
+    labels: [Label!]!
+    email(id: ID!): Email
+    drafts: [Draft!]!
+    searchEmails(query: String!): [Email!]!
+    currentUser: User
+    users: [User!]!
   }
 
   # ===================
@@ -197,19 +275,19 @@ export const emailTypeDefs = gql`
 
   type Mutation {
     #   # Label
-    createGmailLabel(input: GmailLabelInput!): GmailLabel
-    deleteGmailLabel(id: String!): Boolean
-    updateGmailLabel(id: String!, input: GmailLabelInput!): GmailLabel
-    batchUpdateGmailLabels(
-      messageIds: [String!]!
-      addLabelIds: [String]
-      removeLabelIdsLabelIds: [String]
-    ): Boolean
+    # createGmailLabel(input: GmailLabelInput!): GmailLabel
+    # deleteGmailLabel(id: String!): Boolean
+    # updateGmailLabel(id: String!, input: GmailLabelInput!): GmailLabel
+    # batchUpdateGmailLabels(
+    #   messageIds: [String!]!
+    #   addLabelIds: [String]
+    #   removeLabelIdsLabelIds: [String]
+    # ): Boolean
 
     # Message Operations
-    trashGmailMessage(id: String!): GmailMessage
-      untrashGmailMessage(id: String!): GmailMessage
-      deleteGmailMessage(id: String!): Boolean
+    # trashGmailMessage(id: String!): GmailMessage
+    # untrashGmailMessage(id: String!): GmailMessage
+    # deleteGmailMessage(id: String!): Boolean
 
     #   # Thread Operations
     #   trashGmailThread(id: String!): GmailThread
@@ -217,7 +295,7 @@ export const emailTypeDefs = gql`
     #   deleteGmailThread(id: String!): Boolean
 
     #   # Drafts
-      createGmailDraft(input: GmailDraftInput!): GmailDraft
+    # createGmailDraft(input: GmailDraftInput!): GmailDraft
     #   deleteGmailDraft(id: String!): Boolean
     #   sendGmailDraft(input: GmailSendDraftInput!): GmailMessage
     #   updateGmailDraft(id: String!, input: GmailDraftInput!): GmailDraft
@@ -254,5 +332,17 @@ export const emailTypeDefs = gql`
     #   # Gmail Watch / PubSub Subscription Setup
     #   setupGmailWatch(input: GmailWatchInput!): GmailWatchResponse
     #   stopGmailWatch: Boolean
+
+    createLabel(name: String!): Label!
+    deleteLabel(id: ID!): Boolean!
+
+    updateEmailStarred(id: ID!, isStarred: Boolean!): PartialEmailStarInfo!
+    moveEmail(id: ID!, folder: String!): PartialEmailMoveInfo!
+    applyLabel(emailId: ID!, labelId: ID!): PartialEmailLabelsInfo!
+    removeLabel(emailId: ID!, labelId: ID!): PartialEmailLabelsInfo!
+
+    saveDraft(input: SaveDraftInput!): Draft!
+    sendEmail(input: SendEmailInput!): SentEmailInfo!
+    switchUser(userId: ID!): User!
   }
 `;

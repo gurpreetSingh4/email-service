@@ -25,6 +25,7 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "googleapis": "^148.0.0",
     "graphql": "^16.10.0",
     "graphql-tag": "^2.12.6",
     "helmet": "^8.1.0",

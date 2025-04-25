@@ -124,6 +124,7 @@ app.use(errorHandler);
 
 app.listen(port, () => {
   logger.info(`Server is running on port ${port}`);
+  logger.info(`Apollo Server is running on port ${port}`);
 });
 
 //unhandled promise rejection -> Promise is rejected but not caught
