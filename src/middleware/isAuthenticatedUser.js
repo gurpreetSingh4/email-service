@@ -18,9 +18,7 @@ export const isAuthenticatedUser = async (req, res, next) => {
         message: "Missing 'userid' in query parameters",
       });
     }
-    if (!regemail) {
-      regemail = await redisClient.get(`${process.env.CURRENTEMAILTOKENREDIS}`);
-    }
+    
 
     const redisKey = `${process.env.AUTHACCESSTOKENREDIS}:${userid}`;
     const jwtToken = await redisClient.get(redisKey);
@@ -48,9 +46,13 @@ export const isAuthenticatedUser = async (req, res, next) => {
 
     if (regemail) {
       req.session.regEmail = regemail;
-      console.log(regemail);
-      next();
     }
+    
+   
+    if (!regemail) {
+      req.session.regEmail = await redisClient.get(`${process.env.CURRENTEMAILTOKENREDIS}`);
+    }
+
     req.session.regEmail = await redisClient.get(
       `${process.env.CURRENTEMAILTOKENREDIS}`
     );
