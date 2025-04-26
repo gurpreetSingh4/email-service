@@ -9,12 +9,17 @@ export const isAuthenticatedUser = async (req, res, next) => {
   try {
     const { userid, regemail } = req.query;
 
+    console.log("is user authenticate me ", userid, regemail);
+
     if (!userid) {
       logger.warn("Missing 'userid' in query params");
       return res.status(400).json({
         success: false,
         message: "Missing 'userid' in query parameters",
       });
+    }
+    if (!regemail) {
+      regemail = await redisClient.get(`${process.env.CURRENTEMAILTOKENREDIS}`);
     }
 
     const redisKey = `${process.env.AUTHACCESSTOKENREDIS}:${userid}`;

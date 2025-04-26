@@ -253,6 +253,7 @@ export const finalizeOAuth = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
   const { userid, regemail } = req.query;
+  console.log(userid, regemail, "h yha")
   if (!userid || !regemail) {
     return res.status(400).json({
       success: false,
