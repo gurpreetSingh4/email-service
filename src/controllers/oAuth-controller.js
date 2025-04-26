@@ -182,7 +182,7 @@ export const finalizeOAuth = async (req, res) => {
         3599
       );
       return res.redirect(
-        `${process.env.VITE_OAUTH_GMAIL_CALLBACK}?success=true&regemail=${email}&userid=${userId}`
+        `${process.env.VITE_FRONTEND_URL}/oauthgmail/callback?success=true&regemail=${email}&userid=${userId}`
       );
       // return res.status(200).json({
       //   success: true,
@@ -234,7 +234,7 @@ export const finalizeOAuth = async (req, res) => {
     );
     req.session.regEmail = email;
     return res.redirect(
-      `${process.env.VITE_OAUTH_GMAIL_CALLBACK}?success=true&regemail=${email}&userid=${userId}`
+      `${process.env.VITE_FRONTEND_URL}/oauthgmail/callback?success=true&regemail=${email}&userid=${userId}`
     );
     // res.status(200).json({
     //   success: true,
