@@ -32,7 +32,7 @@ async function getTokens(code) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URL,
+        redirect_uri: `${process.env.EMAIL_SERVICE_URL}/api/email/google/callback`,
         grant_type: "authorization_code",
       },
       headers: {
@@ -89,7 +89,7 @@ export async function refreshToken(refreshToken) {
 
 export function getGoogleOAuthUrl() {
   const options = {
-    redirect_uri: process.env.GOOGLE_REDIRECT_URL,
+    redirect_uri: `${process.env.EMAIL_SERVICE_URL}/api/email/google/callback`,
     client_id: process.env.GOOGLE_CLIENT_ID,
     response_type: "code",
     scope: [
